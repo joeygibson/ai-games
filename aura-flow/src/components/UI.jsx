@@ -6,6 +6,8 @@ import './UI.css'
 export default function UI({ phase, onStart, onRestart, showHint }) {
   const score = useStore((s) => s.score)
   const color = useStore((s) => s.color)
+  const flow = useStore((s) => s.flow)
+  const flowMultiplier = useStore((s) => s.flowMultiplier)
   const total = RINGS.length
 
   useEffect(() => {
@@ -26,6 +28,11 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
           <button className="btn-begin" onClick={onStart}>
             Begin
           </button>
+          <div className="menu-rules">
+            <p>Fly through rings to paint &amp; score</p>
+            <p>Keep moving to build <strong>flow</strong> — higher flow = higher score</p>
+            <p>Stop and your flow decays</p>
+          </div>
           <p className="hint-text">
             WASD / Arrow keys to move &nbsp;&middot;&nbsp; Space / Shift to fly
           </p>
@@ -42,9 +49,16 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
       <div className="ui-overlay complete-screen">
         <div className="complete-content">
           <h2 className="complete-title">Flow Complete</h2>
-          <p className="complete-subtitle">
-            You painted with {total} colors
-          </p>
+          <div className="final-stats">
+            <div className="stat">
+              <span className="stat-value">{score.toLocaleString()}</span>
+              <span className="stat-label">Score</span>
+            </div>
+            <div className="stat">
+              <span className="stat-value">{total}</span>
+              <span className="stat-label">Colors Painted</span>
+            </div>
+          </div>
           <button className="btn-begin" onClick={onRestart}>
             Flow Again
           </button>
@@ -53,19 +67,38 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
     )
   }
 
+  const flowPercent = Math.round(flow)
+
   return (
     <div className="ui-overlay game-hud">
-      {/* Progress */}
+      {/* Top bar: score + progress */}
       <div className="hud-top">
+        <div className="score">{score.toLocaleString()}</div>
         <div className="progress-bar">
           <div
             className="progress-fill"
-            style={{ width: `${(score / total) * 100}%`, background: color }}
+            style={{ width: `${(useStore.getState().ringsPassed.length / total) * 100}%`, background: color }}
           />
         </div>
         <span className="progress-text">
-          {score} / {total}
+          {useStore.getState().ringsPassed.length} / {total}
         </span>
+      </div>
+
+      {/* Flow meter */}
+      <div className="flow-meter">
+        <div className="flow-label">
+          FLOW <span className="flow-mult">{flowMultiplier.toFixed(1)}x</span>
+        </div>
+        <div className="flow-bar">
+          <div
+            className="flow-fill"
+            style={{
+              width: `${flowPercent}%`,
+              background: flowPercent > 80 ? '#feca57' : flowPercent > 40 ? color : 'rgba(255,255,255,0.6)',
+            }}
+          />
+        </div>
       </div>
 
       {/* Color indicator */}
@@ -74,7 +107,7 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
         <span className="color-label">painting</span>
       </div>
 
-      {/* Touch joystick area */}
+      {/* Touch joystick */}
       <div id="touch-joystick" className="touch-joystick">
         <div id="touch-joystick-base" className="touch-joystick-base" />
         <div id="touch-joystick-knob" className="touch-joystick-knob" />
@@ -85,10 +118,10 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
         {RINGS.map((ring, i) => (
           <div
             key={ring.id}
-            className={`ring-pip ${i < score ? 'passed' : ''}`}
+            className={`ring-pip ${useStore.getState().ringsPassed.includes(ring.id) ? 'passed' : ''}`}
             style={{
-              borderColor: i < score ? ring.color : 'rgba(255,255,255,0.2)',
-              backgroundColor: i < score ? ring.color : 'transparent',
+              borderColor: useStore.getState().ringsPassed.includes(ring.id) ? ring.color : 'rgba(255,255,255,0.2)',
+              backgroundColor: useStore.getState().ringsPassed.includes(ring.id) ? ring.color : 'transparent',
             }}
           />
         ))}

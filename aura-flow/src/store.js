@@ -42,26 +42,65 @@ const useStore = create((set, get) => ({
   ringsPassed: [],
   speed: 0,
 
+  // Flow mechanic: combo builds while moving, resets when idle
+  flow: 0,          // 0-100: how deep in flow state you are
+  flowBest: 0,      // highest flow achieved this run
+  flowMultiplier: 1, // score multiplier from flow
+
   // Actions
-  startGame: () => set({ phase: 'playing', score: 0, ringsPassed: [], colorIndex: 0, color: COLORS[0] }),
+  startGame: () => set({
+    phase: 'playing', score: 0, ringsPassed: [],
+    colorIndex: 0, color: COLORS[0],
+    flow: 0, flowBest: 0, flowMultiplier: 1,
+  }),
+
   completeGame: () => set({ phase: 'complete' }),
+
   passRing: (ringId) => {
     const state = get()
     if (state.ringsPassed.includes(ringId)) return
     const newIndex = (ringId + 1) % COLORS.length
-    set({
+    const flowBonus = Math.floor(state.flowMultiplier)
+    const points = 100 * flowBonus
+    const newState = {
       ringsPassed: [...state.ringsPassed, ringId],
-      score: state.score + 1,
+      score: state.score + points,
       colorIndex: newIndex,
       color: COLORS[newIndex],
-    })
+    }
     if (state.ringsPassed.length + 1 >= RINGS.length) {
       setTimeout(() => set({ phase: 'complete' }), 1500)
     }
+    set(newState)
   },
-  setSpeed: (speed) => set({ speed }),
 
-  resetGame: () => set({ phase: 'menu', score: 0, ringsPassed: [], colorIndex: 0, color: COLORS[0] }),
+  // Called every frame from PlayerOrb
+  setSpeed: (speed) => {
+    const state = get()
+    // Build flow while moving (speed > 0.1), decay while idle
+    let flow = state.flow
+    const FLOW_BUILD = 0.4   // frames to build
+    const FLOW_DECAY = 0.8   // frames to decay
+
+    if (speed > 0.1) {
+      flow = Math.min(100, flow + FLOW_BUILD * speed)
+    } else {
+      flow = Math.max(0, flow - FLOW_DECAY)
+    }
+
+    // Flow multiplier: 1x at 0%, up to 5x at 100%
+    const flowMultiplier = 1 + (flow / 100) * 4
+
+    const flowBest = Math.max(state.flowBest, flow)
+
+    set({ speed, flow, flowBest, flowMultiplier })
+  },
+
+  resetGame: () => set({
+    phase: 'menu', score: 0, ringsPassed: [],
+    colorIndex: 0, color: COLORS[0],
+    flow: 0, flowBest: 0, flowMultiplier: 1,
+  }),
 }))
 
 export default useStore

@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
+  gap: 32px;
   animation: fadeIn 1.5s ease-out;
 }
 
@@ -78,6 +78,19 @@
   transform: scale(0.98);
 }
 
+.menu-rules {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.8;
+}
+
+.menu-rules strong {
+  color: #feca57;
+  font-weight: 400;
+}
+
 .hint-text {
   font-size: 0.75rem;
   font-weight: 300;
@@ -88,10 +101,10 @@
 /* ========== GAME HUD ========== */
 
 .game-hud {
-  padding: 24px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 8px;
 }
 
 .hud-top {
@@ -100,18 +113,26 @@
   gap: 12px;
 }
 
+.score {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.9);
+  min-width: 80px;
+}
+
 .progress-bar {
   flex: 1;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 1px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 1px;
+  border-radius: 2px;
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -123,6 +144,45 @@
   min-width: 40px;
   text-align: right;
 }
+
+/* ========== FLOW METER ========== */
+
+.flow-meter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flow-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 80px;
+}
+
+.flow-mult {
+  color: #feca57;
+  font-weight: 500;
+}
+
+.flow-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.flow-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.15s ease-out, background 0.5s ease;
+  box-shadow: 0 0 8px rgba(254, 202, 87, 0.4);
+}
+
+/* ========== COLOR / INDICATORS ========== */
 
 .color-indicator {
   position: fixed;
@@ -141,23 +201,15 @@
   box-shadow: 0 0 16px currentColor;
 }
 
-.controls-hint {
-  position: fixed;
-  bottom: 32px;
-  right: 32px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  animation: fadeIn 0.5s ease-out;
-}
-
-.controls-hint span {
+.color-label {
   font-size: 0.65rem;
   font-weight: 300;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
 }
+
+/* ========== RING GUIDE ========== */
 
 .ring-guide {
   position: fixed;
@@ -190,7 +242,7 @@
   transform: translateX(-50%);
   width: 120px;
   height: 120px;
-  display: none; /* Shown only on touch devices */
+  display: none;
   align-items: center;
   justify-content: center;
   pointer-events: all;
@@ -226,14 +278,6 @@
   transition: transform 0.05s ease-out;
 }
 
-.color-label {
-  font-size: 0.65rem;
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
-}
-
 .mobile-hint {
   margin-top: -24px;
 }
@@ -253,7 +297,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
 }
 
 .complete-title {
@@ -265,11 +309,31 @@
   margin: 0;
 }
 
-.complete-subtitle {
-  font-size: 1rem;
-  font-weight: 200;
-  color: rgba(255, 255, 255, 0.5);
+.final-stats {
+  display: flex;
+  gap: 40px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: #feca57;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 300;
   letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
 }
 
 /* ========== ANIMATIONS ========== */

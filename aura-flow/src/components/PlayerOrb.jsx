@@ -6,17 +6,22 @@ import audioEngine from '../audio/AudioEngine'
 import { playerPosition } from '../refs'
 import { getTouchInput } from '../touchControls'
 
-const ACCELERATION = 0.015
+const ACCELERATION = 0.018
 const DAMPING = 0.96
 const VERTICAL_DAMPING = 0.93
 const MAX_SPEED = 0.7
-const RING_TRIGGER_RADIUS = 2.5
 
-// Reusable vectors to avoid GC
+// Ring passage: must cross through the ring plane within the ring radius
+const RING_RADIUS = 1.5
+const RING_DEPTH = 1.0      // how close to ring Z-plane counts
+const RING_Y_RANGE = 2.0    // vertical tolerance
+
+// Reusable vectors
 const _moveDir = new THREE.Vector3()
 const _horizontalSpeed = new THREE.Vector2()
 const _ringPos = new THREE.Vector3()
-const _toRing = new THREE.Vector3()
+const _prevToRing = new THREE.Vector3()
+const _currToRing = new THREE.Vector3()
 
 export default function PlayerOrb() {
   const groupRef = useRef()
@@ -26,17 +31,14 @@ export default function PlayerOrb() {
   const glowRef = useRef()
   const lightRef = useRef()
   const innerRef = useRef()
+  const prevPos = useRef(new THREE.Vector3(0, 2, 0))
 
   const color = useStore((s) => s.color)
   const threeColor = useMemo(() => new THREE.Color(color), [color])
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      keysRef.current[e.key.toLowerCase()] = true
-    }
-    const handleKeyUp = (e) => {
-      keysRef.current[e.key.toLowerCase()] = false
-    }
+    const handleKeyDown = (e) => { keysRef.current[e.key.toLowerCase()] = true }
+    const handleKeyUp = (e) => { keysRef.current[e.key.toLowerCase()] = false }
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
     return () => {
@@ -52,7 +54,7 @@ export default function PlayerOrb() {
     const vel = velocityRef.current
     const pos = groupRef.current.position
 
-    // Calculate movement direction
+    // Movement
     _moveDir.set(0, 0, 0)
     if (keys['w'] || keys['arrowup']) _moveDir.z -= 1
     if (keys['s'] || keys['arrowdown']) _moveDir.z += 1
@@ -61,23 +63,19 @@ export default function PlayerOrb() {
     if (keys[' ']) _moveDir.y += 1
     if (keys['shift']) _moveDir.y -= 1
 
-    // Touch input (mobile)
+    // Touch
     const touch = getTouchInput()
     if (Math.abs(touch.dx) > 0.1 || Math.abs(touch.dy) > 0.1) {
       _moveDir.x += touch.dx
       _moveDir.z += touch.dy
     }
 
-    if (_moveDir.lengthSq() > 0) {
-      _moveDir.normalize()
-    }
+    if (_moveDir.lengthSq() > 0) _moveDir.normalize()
 
-    // Apply acceleration
     vel.x += _moveDir.x * ACCELERATION
     vel.y += _moveDir.y * ACCELERATION * 0.7
     vel.z += _moveDir.z * ACCELERATION
 
-    // Clamp horizontal speed
     _horizontalSpeed.set(vel.x, vel.z)
     const hSpeed = _horizontalSpeed.length()
     if (hSpeed > MAX_SPEED) {
@@ -87,65 +85,85 @@ export default function PlayerOrb() {
     }
     vel.y = THREE.MathUtils.clamp(vel.y, -MAX_SPEED * 0.5, MAX_SPEED * 0.5)
 
-    // Apply damping (floating in oil)
     vel.x *= DAMPING
     vel.z *= DAMPING
     vel.y *= VERTICAL_DAMPING
 
-    // Update position
     pos.x += vel.x
     pos.y += vel.y
     pos.z += vel.z
 
-    // Keep above ground
-    if (pos.y < 0.5) {
-      pos.y = 0.5
-      vel.y = Math.max(0, vel.y)
-    }
+    if (pos.y < 0.5) { pos.y = 0.5; vel.y = Math.max(0, vel.y) }
 
-    // Write to shared ref for other components
     playerPosition.copy(pos)
 
-    // Breathing animation
+    // Breathing + flow glow
     const time = state.clock.elapsedTime
+    const flow = useStore.getState().flow / 100  // 0-1
     const breathe = 1 + Math.sin(time * 2) * 0.03
+    const flowGlow = 1 + flow * 0.04  // orb grows slightly in flow
     if (orbRef.current) {
-      orbRef.current.scale.setScalar(breathe)
+      orbRef.current.scale.setScalar(breathe * flowGlow)
       orbRef.current.material.emissive.copy(threeColor)
+      orbRef.current.material.emissiveIntensity = 2 + flow * 3  // brighter in flow
       orbRef.current.material.color.copy(threeColor)
     }
     if (innerRef.current) {
-      innerRef.current.scale.setScalar(breathe * 1.1 + Math.sin(time * 3) * 0.05)
+      innerRef.current.scale.setScalar(breathe * flowGlow * 1.1 + Math.sin(time * 3) * 0.05)
       innerRef.current.material.emissive.copy(threeColor)
+      innerRef.current.material.emissiveIntensity = 4 + flow * 4
     }
     if (glowRef.current) {
-      glowRef.current.scale.setScalar(breathe * 1.6)
+      glowRef.current.scale.setScalar(breathe * (1.6 + flow * 0.8))  // glow expands in flow
       glowRef.current.material.color.copy(threeColor)
+      glowRef.current.material.opacity = 0.12 + flow * 0.08
     }
     if (lightRef.current) {
       lightRef.current.color.copy(threeColor)
+      lightRef.current.intensity = 8 + flow * 12  // light gets brighter in flow
     }
 
-    // Update audio filter based on speed
     const speed = hSpeed / MAX_SPEED
     useStore.getState().setSpeed(speed)
     audioEngine.setFilterFromSpeed(speed)
 
-    // Check ring collisions
+    // Ring passage detection: did we cross through the ring this frame?
     const currentRingsPassed = useStore.getState().ringsPassed
     for (let i = 0; i < RINGS.length; i++) {
       const ring = RINGS[i]
       if (currentRingsPassed.includes(ring.id)) continue
+
       _ringPos.set(...ring.position)
-      if (pos.distanceTo(_ringPos) < RING_TRIGGER_RADIUS) {
-        useStore.getState().passRing(ring.id)
-        audioEngine.playNote(ring.note)
-        audioEngine.setDroneShift(ring.id)
-        // Gentle push toward ring center
-        _toRing.copy(_ringPos).sub(pos).normalize()
-        vel.add(_toRing.multiplyScalar(0.05))
+
+      // Vector from ring center to player (previous and current frame)
+      _prevToRing.subVectors(prevPos.current, _ringPos)
+      _currToRing.subVectors(pos, _ringPos)
+
+      // Check if we crossed the ring's Z-plane this frame
+      // Ring plane normal is (0,0,1) — facing along Z
+      const prevDist = _prevToRing.z
+      const currDist = _currToRing.z
+
+      // Crossed from one side to the other?
+      if (prevDist * currDist < 0) {
+        // Check horizontal/vertical distance from ring center at crossing point
+        const t = Math.abs(prevDist) / (Math.abs(prevDist) + Math.abs(currDist))
+        const crossX = _prevToRing.x + (_currToRing.x - _prevToRing.x) * t
+        const crossY = _prevToRing.y + (_currToRing.y - _prevToRing.y) * t
+        const crossDist = Math.sqrt(crossX * crossX + crossY * crossY)
+
+        if (crossDist < RING_RADIUS) {
+          useStore.getState().passRing(ring.id)
+          const flowMult = useStore.getState().flowMultiplier
+          audioEngine.playNote(ring.note, flowMult > 2 ? 3.5 : 2.5)
+          audioEngine.setDroneShift(ring.id)
+          audioEngine.playChime(ring.note * 0.5) // sub-harmonic chime
+        }
       }
     }
+
+    // Store previous position for next frame's crossing detection
+    prevPos.current.copy(pos)
   })
 
   return (

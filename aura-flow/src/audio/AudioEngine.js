@@ -140,16 +140,48 @@ class AudioEngine {
 
   setDroneShift(index) {
     if (!this.initialized) return
-    // Subtly shift drone root when passing through rings
     const shifts = [0, 1, 2, 3, 4, 5, 6, 7]
-    const semitone = Math.pow(2, shifts[index] / 12)
     this.padNodes.forEach(({ osc }, i) => {
       const base = [65.41, 98.00, 130.81][i]
       osc.frequency.linearRampToValueAtTime(
-        base * Math.pow(2, shifts[index] / 24), // quarter-tone shift for subtlety
-        this.ctx.currentTime + 2 // slow transition
+        base * Math.pow(2, shifts[index] / 24),
+        this.ctx.currentTime + 2
       )
     })
+  }
+
+  // Bright chime for ring passage — more noticeable than the note
+  playChime(frequency, duration = 1.5) {
+    if (!this.initialized) return
+    const now = this.ctx.currentTime
+
+    // Bright bell tone
+    const osc = this.ctx.createOscillator()
+    const gain = this.ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = frequency * 2 // one octave up for brightness
+
+    gain.gain.setValueAtTime(0, now)
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration)
+
+    osc.connect(gain)
+    gain.connect(this.reverbSend)
+    osc.start(now)
+    osc.stop(now + duration)
+
+    // Second harmonic for shimmer
+    const osc2 = this.ctx.createOscillator()
+    const gain2 = this.ctx.createGain()
+    osc2.type = 'sine'
+    osc2.frequency.value = frequency * 3
+    gain2.gain.setValueAtTime(0, now)
+    gain2.gain.linearRampToValueAtTime(0.06, now + 0.01)
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.5)
+    osc2.connect(gain2)
+    gain2.connect(this.reverbSend)
+    osc2.start(now)
+    osc2.stop(now + duration)
   }
 }
 
