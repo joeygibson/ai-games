@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+
+# Vite
+.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
