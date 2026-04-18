@@ -1,4 +1,4 @@
-name: Deploy Aura Flow
+name: Deploy Games
 
 on:
   push:
@@ -27,19 +27,42 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: cd aura-flow && npm ci
+      # ---- Build each game ----
+      # To add a new game: copy this block, change the directory,
+      # and make sure its vite.config.js has the right base path
+      # (e.g. base: '/ai-games/your-game-name/')
 
-      - name: Build
-        run: cd aura-flow && npm run build
+      - name: Build Aura Flow
+        run: cd aura-flow && npm ci && npm run build
+      - name: Move Aura Flow to combined output
+        run: mkdir -p _site/aura-flow && mv aura-flow/dist/* _site/aura-flow/
 
+      # - name: Build Game 2
+      #   run: cd game-2 && npm ci && npm run build
+      # - name: Move Game 2 to combined output
+      #   run: mkdir -p _site/game-2 && mv game-2/dist/* _site/game-2/
+
+      # ---- Optional: add a landing page at the repo root ----
+      - name: Add index page
+        run: |
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html><head><meta charset="utf-8"><title>AI Games</title>
+          <style>body{background:#0a0a0a;color:#fff;font-family:Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}a{color:#48dbfb;text-decoration:none;font-size:1.25rem;display:block;padding:1rem;border:1px solid rgba(255,255,255,.1);border-radius:8px;margin:.5rem 0;min-width:200px;text-align:center;transition:all .3s}a:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.05)}</style></head>
+          <body><div>
+          <h1 style="font-weight:300;letter-spacing:.1em;margin-bottom:2rem">AI Games</h1>
+          <a href="/ai-games/aura-flow/">Aura Flow</a>
+          </div></body></html>
+          EOF
+
+      # ---- Deploy ----
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: aura-flow/dist
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
