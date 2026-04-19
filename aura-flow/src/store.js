@@ -22,8 +22,6 @@ export const NOTES = [
   659.26, // E5
 ]
 
-export const RING_OPENING_RADIUS = 2.2
-
 export const RINGS = [
   { id: 0, position: [0, 2, -18], color: COLORS[0], note: NOTES[0] },
   { id: 1, position: [3, 3, -38], color: COLORS[1], note: NOTES[1] },
@@ -31,23 +29,25 @@ export const RINGS = [
   { id: 3, position: [4, 3.5, -82], color: COLORS[3], note: NOTES[3] },
   { id: 4, position: [-3, 5, -104], color: COLORS[4], note: NOTES[4] },
   { id: 5, position: [2, 4.5, -126], color: COLORS[5], note: NOTES[5] },
-  { id: 6, position: [-4, 6, -148], color: COLORS[6], note: NOTES[6] },
+  { id: 6, position: [-4, 5.5, -148], color: COLORS[6], note: NOTES[6] },
   { id: 7, position: [0, 5, -170], color: COLORS[7], note: NOTES[7] },
 ]
 
+export const RING_OPENING_RADIUS = 2.2
+
 const useStore = create((set, get) => ({
   // Game state
-  phase: 'menu', // 'menu' | 'playing' | 'complete'
+  phase: 'menu', // 'menu' | 'playing' | 'complete' | 'zen'
   colorIndex: 0,
   color: COLORS[0],
   score: 0,
   ringsPassed: [],
   speed: 0,
 
-  // Flow mechanic: combo builds while moving, resets when idle
-  flow: 0,          // 0-100: how deep in flow state you are
-  flowBest: 0,      // highest flow achieved this run
-  flowMultiplier: 1, // score multiplier from flow
+  // Flow mechanic
+  flow: 0,
+  flowBest: 0,
+  flowMultiplier: 1,
 
   // Actions
   startGame: () => set({
@@ -58,44 +58,38 @@ const useStore = create((set, get) => ({
 
   completeGame: () => set({ phase: 'complete' }),
 
+  enterZen: () => set({ phase: 'zen' }),
+
   passRing: (ringId) => {
     const state = get()
     if (state.ringsPassed.includes(ringId)) return
     const newIndex = (ringId + 1) % COLORS.length
     const flowBonus = Math.floor(state.flowMultiplier)
     const points = 100 * flowBonus
-    const newState = {
-      ringsPassed: [...state.ringsPassed, ringId],
+    const newRingsPassed = [...state.ringsPassed, ringId]
+    set({
+      ringsPassed: newRingsPassed,
       score: state.score + points,
       colorIndex: newIndex,
       color: COLORS[newIndex],
-    }
-    if (state.ringsPassed.length + 1 >= RINGS.length) {
+    })
+    // All 8 rings = complete
+    if (newRingsPassed.length >= RINGS.length) {
       setTimeout(() => set({ phase: 'complete' }), 1500)
     }
-    set(newState)
   },
 
-  // Called every frame from PlayerOrb
-  setSpeed: (speed) => {
+  setSpeed: (speed) => set({ speed }),
+
+  // In zen mode, rings don't end the game — they just change color
+  passRingZen: (ringId) => {
     const state = get()
-    // Build flow while moving (speed > 0.1), decay while idle
-    let flow = state.flow
-    const FLOW_BUILD = 0.4   // frames to build
-    const FLOW_DECAY = 0.8   // frames to decay
-
-    if (speed > 0.1) {
-      flow = Math.min(100, flow + FLOW_BUILD * speed)
-    } else {
-      flow = Math.max(0, flow - FLOW_DECAY)
-    }
-
-    // Flow multiplier: 1x at 0%, up to 5x at 100%
-    const flowMultiplier = 1 + (flow / 100) * 4
-
-    const flowBest = Math.max(state.flowBest, flow)
-
-    set({ speed, flow, flowBest, flowMultiplier })
+    const newIndex = (ringId + 1) % COLORS.length
+    set({
+      colorIndex: newIndex,
+      color: COLORS[newIndex],
+      score: state.score + Math.floor(state.flowMultiplier) * 50,
+    })
   },
 
   resetGame: () => set({

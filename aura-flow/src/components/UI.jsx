@@ -96,10 +96,19 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
               <span className="stat-value">{total}</span>
               <span className="stat-label">Colors Painted</span>
             </div>
+            <div className="stat">
+              <span className="stat-value">{useStore.getState().flowBest}%</span>
+              <span className="stat-label">Peak Flow</span>
+            </div>
           </div>
-          <button className="btn-begin" onClick={onRestart}>
-            Flow Again
-          </button>
+          <div className="complete-buttons">
+            <button className="btn-begin" onClick={() => useStore.getState().enterZen()}>
+              Keep Painting
+            </button>
+            <button className="btn-begin btn-secondary" onClick={onRestart}>
+              Flow Again
+            </button>
+          </div>
         </div>
       </div>
     )

@@ -122,28 +122,48 @@ export default function PlayerOrb() {
     useStore.getState().setSpeed(speed)
     audioEngine.setFilterFromSpeed(speed)
 
-    // Ring detection — simple proximity to ring center
+    // Ring detection — works differently in zen vs story mode
+    const currentPhase = useStore.getState().phase
+    const isZen = currentPhase === 'zen'
     const currentRingsPassed = useStore.getState().ringsPassed
     for (let i = 0; i < RINGS.length; i++) {
       const ring = RINGS[i]
-      if (currentRingsPassed.includes(ring.id)) continue
 
-      _ringPos.set(...ring.position)
-      const dist = pos.distanceTo(_ringPos)
+      if (isZen) {
+        // Zen: proximity to ANY ring changes color
+        _ringPos.set(...ring.position)
+        const dist = pos.distanceTo(_ringPos)
+        if (dist < RING_TRIGGER_DIST) {
+          if (!ring._zenCooldown) {
+            ring._zenCooldown = true
+            useStore.getState().passRingZen(ring.id)
+            audioEngine.playNote(ring.note, 2)
+            audioEngine.playChime(ring.note * 0.5)
+            audioEngine.setDroneShift(ring.id)
+            setTimeout(() => { ring._zenCooldown = false }, 600)
+          }
+        }
+      } else {
+        // Story: each ring can only be triggered once
+        if (currentRingsPassed.includes(ring.id)) continue
 
-      // Gravitational pull — gently draw player toward ring when nearby
-      if (dist < RING_PULL_DIST) {
-        const pullDir = _toRing.copy(_ringPos).sub(pos).normalize()
-        const pullStrength = RING_PULL_STRENGTH * (1 - dist / RING_PULL_DIST) // stronger when closer
-        vel.add(pullDir.multiplyScalar(pullStrength))
-      }
+        _ringPos.set(...ring.position)
+        const dist = pos.distanceTo(_ringPos)
 
-      if (dist < RING_TRIGGER_DIST) {
-        const flowMult = useStore.getState().flowMultiplier
-        useStore.getState().passRing(ring.id)
-        audioEngine.playNote(ring.note, flowMult > 2 ? 3.5 : 2.5)
-        audioEngine.playChime(ring.note * 0.5)
-        audioEngine.setDroneShift(ring.id)
+        // Gravitational pull toward unpassed rings
+        if (dist < RING_PULL_DIST) {
+          const pullDir = _toRing.copy(_ringPos).sub(pos).normalize()
+          const pullStrength = RING_PULL_STRENGTH * (1 - dist / RING_PULL_DIST)
+          vel.add(pullDir.multiplyScalar(pullStrength))
+        }
+
+        if (dist < RING_TRIGGER_DIST) {
+          const flowMult = useStore.getState().flowMultiplier
+          useStore.getState().passRing(ring.id)
+          audioEngine.playNote(ring.note, flowMult > 2 ? 3.5 : 2.5)
+          audioEngine.playChime(ring.note * 0.5)
+          audioEngine.setDroneShift(ring.id)
+        }
       }
     }
   })

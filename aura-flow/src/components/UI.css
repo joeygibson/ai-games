@@ -384,6 +384,17 @@
   text-transform: uppercase;
 }
 
+.complete-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* ========== ANIMATIONS ========== */
 
 @keyframes fadeIn {
