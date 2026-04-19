@@ -27,3 +27,8 @@ Control a liquid light orb through an infinite dark space. Navigate architectura
 
 - [`vibejam_game_ideas.md`](vibejam_game_ideas.md) — early retro/PICO-8 concepts
 - [`vibejam_web_highfidelity_ideas.md`](vibejam_web_highfidelity_ideas.md) — final high-fidelity ThreeJS concepts
+
+# Source
+
+* https://xcancel.com/levelsio/status/2039777677435908421
+
