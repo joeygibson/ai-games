@@ -1,7 +1,7 @@
 import { useRef, useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import useStore, { RINGS } from '../store'
+import useStore, { RINGS, RING_OPENING_RADIUS } from '../store'
 import audioEngine from '../audio/AudioEngine'
 import { playerPosition } from '../refs'
 import { getTouchInput } from '../touchControls'
@@ -10,7 +10,7 @@ const ACCELERATION = 0.018
 const DAMPING = 0.96
 const VERTICAL_DAMPING = 0.93
 const MAX_SPEED = 0.7
-const RING_OPENING_RADIUS = 1.5
+const RING_PASS_RADIUS = 2.8    // detection — slightly more generous than visual
 
 // Reusable vectors
 const _moveDir = new THREE.Vector3()
@@ -147,7 +147,7 @@ export default function PlayerOrb() {
         const crossY = _prevToRing.y + (_currToRing.y - _prevToRing.y) * t
         const crossDist = Math.sqrt(crossX * crossX + crossY * crossY)
 
-        if (crossDist < RING_OPENING_RADIUS) {
+        if (crossDist < RING_PASS_RADIUS) {
           const flowMult = useStore.getState().flowMultiplier
           useStore.getState().passRing(ring.id)
           audioEngine.playNote(ring.note, flowMult > 2 ? 3.5 : 2.5)

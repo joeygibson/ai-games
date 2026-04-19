@@ -22,15 +22,17 @@ export const NOTES = [
   659.26, // E5
 ]
 
+export const RING_OPENING_RADIUS = 2.2
+
 export const RINGS = [
   { id: 0, position: [0, 2, -18], color: COLORS[0], note: NOTES[0] },
-  { id: 1, position: [10, 3.5, -38], color: COLORS[1], note: NOTES[1] },
-  { id: 2, position: [-6, 5, -60], color: COLORS[2], note: NOTES[2] },
-  { id: 3, position: [14, 4, -82], color: COLORS[3], note: NOTES[3] },
-  { id: 4, position: [-12, 7, -104], color: COLORS[4], note: NOTES[4] },
-  { id: 5, position: [7, 5.5, -126], color: COLORS[5], note: NOTES[5] },
-  { id: 6, position: [-16, 9, -148], color: COLORS[6], note: NOTES[6] },
-  { id: 7, position: [0, 7, -170], color: COLORS[7], note: NOTES[7] },
+  { id: 1, position: [3, 3, -38], color: COLORS[1], note: NOTES[1] },
+  { id: 2, position: [-2, 4, -60], color: COLORS[2], note: NOTES[2] },
+  { id: 3, position: [4, 3.5, -82], color: COLORS[3], note: NOTES[3] },
+  { id: 4, position: [-3, 5, -104], color: COLORS[4], note: NOTES[4] },
+  { id: 5, position: [2, 4.5, -126], color: COLORS[5], note: NOTES[5] },
+  { id: 6, position: [-4, 6, -148], color: COLORS[6], note: NOTES[6] },
+  { id: 7, position: [0, 5, -170], color: COLORS[7], note: NOTES[7] },
 ]
 
 const useStore = create((set, get) => ({

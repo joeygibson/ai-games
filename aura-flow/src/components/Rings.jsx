@@ -1,9 +1,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
-import useStore, { RINGS } from '../store'
+import useStore, { RINGS, RING_OPENING_RADIUS } from '../store'
 
-const RING_OPENING_RADIUS = 1.5
 
 function Ring({ id, position, color, isNext }) {
   const groupRef = useRef()
