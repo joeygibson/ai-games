@@ -184,6 +184,35 @@
 
 /* ========== COLOR / INDICATORS ========== */
 
+.next-ring-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.next-ring-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+}
+
+.next-ring-dist {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.complete-label {
+  color: #feca57;
+  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+}
+
 .color-indicator {
   position: fixed;
   bottom: 32px;

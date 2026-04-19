@@ -1,6 +1,8 @@
 import useStore, { RINGS } from '../store'
-import { useEffect } from 'react'
+import { playerPosition } from '../refs'
+import { useEffect, useState } from 'react'
 import { initTouchControls } from '../touchControls'
+import * as THREE from 'three'
 import './UI.css'
 
 export default function UI({ phase, onStart, onRestart, showHint }) {
@@ -8,7 +10,27 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
   const color = useStore((s) => s.color)
   const flow = useStore((s) => s.flow)
   const flowMultiplier = useStore((s) => s.flowMultiplier)
+  const ringsPassed = useStore((s) => s.ringsPassed)
   const total = RINGS.length
+
+  const [nextRingDist, setNextRingDist] = useState(0)
+
+  // Update distance to next ring every frame
+  useEffect(() => {
+    if (phase !== 'playing') return
+    let raf
+    const update = () => {
+      const unpassed = RINGS.filter(r => !ringsPassed.includes(r.id))
+      if (unpassed.length > 0) {
+        const ringPos = new THREE.Vector3(...unpassed[0].position)
+        const dist = playerPosition.distanceTo(ringPos)
+        setNextRingDist(Math.round(dist))
+      }
+      raf = requestAnimationFrame(update)
+    }
+    update()
+    return () => cancelAnimationFrame(raf)
+  }, [phase, ringsPassed])
 
   useEffect(() => {
     if (phase === 'playing') {
@@ -16,6 +38,8 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
       return cleanup
     }
   }, [phase])
+
+  const flowPercent = Math.round(flow)
 
   if (phase === 'menu') {
     return (
@@ -67,7 +91,7 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
     )
   }
 
-  const flowPercent = Math.round(flow)
+  const passedCount = ringsPassed.length
 
   return (
     <div className="ui-overlay game-hud">
@@ -77,11 +101,11 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
         <div className="progress-bar">
           <div
             className="progress-fill"
-            style={{ width: `${(useStore.getState().ringsPassed.length / total) * 100}%`, background: color }}
+            style={{ width: `${(passedCount / total) * 100}%`, background: color }}
           />
         </div>
         <span className="progress-text">
-          {useStore.getState().ringsPassed.length} / {total}
+          {passedCount} / {total}
         </span>
       </div>
 
@@ -101,6 +125,20 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
         </div>
       </div>
 
+      {/* Next ring distance */}
+      {passedCount < total && (
+        <div className="next-ring-hint">
+          <span className="next-ring-label">NEXT RING</span>
+          <span className="next-ring-dist">{nextRingDist}m</span>
+        </div>
+      )}
+
+      {passedCount >= total && (
+        <div className="next-ring-hint">
+          <span className="next-ring-label complete-label">ALL RINGS PASSED ✦</span>
+        </div>
+      )}
+
       {/* Color indicator */}
       <div className="color-indicator">
         <div className="color-dot" style={{ background: color }} />
@@ -118,10 +156,10 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
         {RINGS.map((ring, i) => (
           <div
             key={ring.id}
-            className={`ring-pip ${useStore.getState().ringsPassed.includes(ring.id) ? 'passed' : ''}`}
+            className={`ring-pip ${ringsPassed.includes(ring.id) ? 'passed' : ''}`}
             style={{
-              borderColor: useStore.getState().ringsPassed.includes(ring.id) ? ring.color : 'rgba(255,255,255,0.2)',
-              backgroundColor: useStore.getState().ringsPassed.includes(ring.id) ? ring.color : 'transparent',
+              borderColor: ringsPassed.includes(ring.id) ? ring.color : 'rgba(255,255,255,0.2)',
+              backgroundColor: ringsPassed.includes(ring.id) ? ring.color : 'transparent',
             }}
           />
         ))}
