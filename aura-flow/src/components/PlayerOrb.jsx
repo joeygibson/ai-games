@@ -10,14 +10,15 @@ const ACCELERATION = 0.018
 const DAMPING = 0.96
 const VERTICAL_DAMPING = 0.93
 const MAX_SPEED = 0.7
-// How close to the ring center you need to be to trigger it
-// Ring visual radius is 2.2, so 2.0 means you need to go through the opening
-const RING_TRIGGER_DIST = 4.0
+const RING_TRIGGER_DIST = 5.0   // how close to trigger
+const RING_PULL_DIST = 10.0       // start pulling player toward ring
+const RING_PULL_STRENGTH = 0.006  // how hard to pull
 
 // Reusable vectors
 const _moveDir = new THREE.Vector3()
 const _horizontalSpeed = new THREE.Vector2()
 const _ringPos = new THREE.Vector3()
+const _toRing = new THREE.Vector3()
 
 export default function PlayerOrb() {
   const groupRef = useRef()
@@ -129,6 +130,13 @@ export default function PlayerOrb() {
 
       _ringPos.set(...ring.position)
       const dist = pos.distanceTo(_ringPos)
+
+      // Gravitational pull — gently draw player toward ring when nearby
+      if (dist < RING_PULL_DIST) {
+        const pullDir = _toRing.copy(_ringPos).sub(pos).normalize()
+        const pullStrength = RING_PULL_STRENGTH * (1 - dist / RING_PULL_DIST) // stronger when closer
+        vel.add(pullDir.multiplyScalar(pullStrength))
+      }
 
       if (dist < RING_TRIGGER_DIST) {
         const flowMult = useStore.getState().flowMultiplier
