@@ -39,8 +39,9 @@ function Ring({ id, position, color, isNext }) {
         pulseIntensity = 1.8 + Math.sin(time * 3) * 1.0
         opacity = 0.85
       } else {
-        pulseIntensity = 0.5 + Math.sin(time * 2) * 0.2
-        opacity = 0.4
+        // Distant unpassed rings — pulsing but clearly visible
+        pulseIntensity = 2.0 + Math.sin(time * 1.5) * 0.8
+        opacity = 0.75
       }
       torusRef.current.material.emissiveIntensity = pulseIntensity
       torusRef.current.material.opacity = opacity
@@ -57,7 +58,7 @@ function Ring({ id, position, color, isNext }) {
     if (lightRef.current) {
       if (passed) lightRef.current.intensity = 6
       else if (isNext) lightRef.current.intensity = 4 + Math.sin(time * 3) * 2
-      else lightRef.current.intensity = 1.5 + Math.sin(time * 2) * 0.5
+      else lightRef.current.intensity = 3 + Math.sin(time * 2) * 1
     }
 
     if (burstRef.current) {

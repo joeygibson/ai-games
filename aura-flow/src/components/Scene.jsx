@@ -26,7 +26,7 @@ export default function Scene() {
       />
 
       {/* Fog */}
-      <fog attach="fog" args={['#080810', 25, 160]} />
+      <fog attach="fog" args={['#080810', 25, 250]} />
 
       {/* Game elements */}
       {phase !== 'menu' && (
