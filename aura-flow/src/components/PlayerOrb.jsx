@@ -10,12 +10,14 @@ const ACCELERATION = 0.018
 const DAMPING = 0.96
 const VERTICAL_DAMPING = 0.93
 const MAX_SPEED = 0.7
-const RING_TRIGGER_RADIUS = 2.8  // generous detection radius
+const RING_OPENING_RADIUS = 1.5
 
 // Reusable vectors
 const _moveDir = new THREE.Vector3()
 const _horizontalSpeed = new THREE.Vector2()
 const _ringPos = new THREE.Vector3()
+const _prevToRing = new THREE.Vector3()
+const _currToRing = new THREE.Vector3()
 
 export default function PlayerOrb() {
   const groupRef = useRef()
@@ -25,6 +27,7 @@ export default function PlayerOrb() {
   const glowRef = useRef()
   const lightRef = useRef()
   const innerRef = useRef()
+  const prevPos = useRef(new THREE.Vector3(0, 2, 0))
 
   const color = useStore((s) => s.color)
   const threeColor = useMemo(() => new THREE.Color(color), [color])
@@ -84,13 +87,12 @@ export default function PlayerOrb() {
     pos.y += vel.y
     pos.z += vel.z
 
-    // Keep above ground, prevent going too high
     if (pos.y < 0.5) { pos.y = 0.5; vel.y = Math.max(0, vel.y) }
     if (pos.y > 20) { pos.y = 20; vel.y = Math.min(0, vel.y) }
 
     playerPosition.copy(pos)
 
-    // Flow-based glow
+    // Flow glow
     const flow = useStore.getState().flow / 100
     const time = state.clock.elapsedTime
     const breathe = 1 + Math.sin(time * 2) * 0.03
@@ -121,23 +123,41 @@ export default function PlayerOrb() {
     useStore.getState().setSpeed(speed)
     audioEngine.setFilterFromSpeed(speed)
 
-    // Ring detection — proximity-based, generous radius
+    // Ring passage: detect crossing through the ring's Z-plane
+    // Rings are vertical portals facing along Z
     const currentRingsPassed = useStore.getState().ringsPassed
     for (let i = 0; i < RINGS.length; i++) {
       const ring = RINGS[i]
       if (currentRingsPassed.includes(ring.id)) continue
 
       _ringPos.set(...ring.position)
-      const dist = pos.distanceTo(_ringPos)
 
-      if (dist < RING_TRIGGER_RADIUS) {
-        const flowMult = useStore.getState().flowMultiplier
-        useStore.getState().passRing(ring.id)
-        audioEngine.playNote(ring.note, flowMult > 2 ? 3.5 : 2.5)
-        audioEngine.playChime(ring.note * 0.5)
-        audioEngine.setDroneShift(ring.id)
+      // Vector from ring center to player at previous and current frame
+      _prevToRing.subVectors(prevPos.current, _ringPos)
+      _currToRing.subVectors(pos, _ringPos)
+
+      // Did we cross the ring's Z-plane this frame?
+      const prevZ = _prevToRing.z
+      const currZ = _currToRing.z
+
+      if (prevZ * currZ < 0) {
+        // We crossed the Z-plane. Find crossing point and check if within ring radius.
+        const t = Math.abs(prevZ) / (Math.abs(prevZ) + Math.abs(currZ))
+        const crossX = _prevToRing.x + (_currToRing.x - _prevToRing.x) * t
+        const crossY = _prevToRing.y + (_currToRing.y - _prevToRing.y) * t
+        const crossDist = Math.sqrt(crossX * crossX + crossY * crossY)
+
+        if (crossDist < RING_OPENING_RADIUS) {
+          const flowMult = useStore.getState().flowMultiplier
+          useStore.getState().passRing(ring.id)
+          audioEngine.playNote(ring.note, flowMult > 2 ? 3.5 : 2.5)
+          audioEngine.playChime(ring.note * 0.5)
+          audioEngine.setDroneShift(ring.id)
+        }
       }
     }
+
+    prevPos.current.copy(pos)
   })
 
   return (

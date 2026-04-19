@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useStore, { RINGS } from '../store'
 
+const RING_OPENING_RADIUS = 1.5
+
 function Ring({ id, position, color, isNext }) {
   const groupRef = useRef()
   const torusRef = useRef()
@@ -18,22 +20,19 @@ function Ring({ id, position, color, isNext }) {
   useFrame((state) => {
     const time = state.clock.elapsedTime + timeOffset
 
-    // Gentle float animation
     if (groupRef.current) {
       groupRef.current.position.y = position[1] + Math.sin(time * 0.5) * 0.3
     }
 
-    // Rotate the ring
     if (torusRef.current) {
-      const rotSpeed = isNext && !passed ? 0.008 : 0.003
+      const rotSpeed = isNext && !passed ? 0.005 : 0.001
       torusRef.current.rotation.y += rotSpeed
-      torusRef.current.rotation.x = Math.sin(time * 0.3) * 0.1
+      // Subtle tilt wobble
+      torusRef.current.rotation.x = Math.sin(time * 0.3) * 0.05
     }
 
-    // Pulse intensity: next ring pulses most prominently
     if (torusRef.current?.material) {
-      let pulseIntensity
-      let opacity
+      let pulseIntensity, opacity
       if (passed) {
         pulseIntensity = 2.5
         opacity = 1
@@ -48,7 +47,6 @@ function Ring({ id, position, color, isNext }) {
       torusRef.current.material.opacity = opacity
     }
 
-    // Glow sphere
     if (glowRef.current) {
       const glowScale = passed ? 1.4 : (isNext ? (1.2 + Math.sin(time * 1.5) * 0.2) : (1 + Math.sin(time * 1.5) * 0.1))
       glowRef.current.scale.setScalar(glowScale)
@@ -57,18 +55,12 @@ function Ring({ id, position, color, isNext }) {
       }
     }
 
-    // Point light: next ring has brighter light
     if (lightRef.current) {
-      if (passed) {
-        lightRef.current.intensity = 6
-      } else if (isNext) {
-        lightRef.current.intensity = 4 + Math.sin(time * 3) * 2
-      } else {
-        lightRef.current.intensity = 1.5 + Math.sin(time * 2) * 0.5
-      }
+      if (passed) lightRef.current.intensity = 6
+      else if (isNext) lightRef.current.intensity = 4 + Math.sin(time * 3) * 2
+      else lightRef.current.intensity = 1.5 + Math.sin(time * 2) * 0.5
     }
 
-    // Burst effect - trigger exactly once when first becoming passed
     if (burstRef.current) {
       if (passed && !burstTriggered.current) {
         burstTriggered.current = true
@@ -79,9 +71,7 @@ function Ring({ id, position, color, isNext }) {
         burstScale.current *= 0.93
         burstOpacity.current *= 0.91
         burstRef.current.scale.setScalar(burstScale.current * 5)
-        if (burstRef.current.material) {
-          burstRef.current.material.opacity = burstOpacity.current
-        }
+        if (burstRef.current.material) burstRef.current.material.opacity = burstOpacity.current
       } else if (burstTriggered.current && burstScale.current <= 0.01) {
         burstRef.current.scale.setScalar(0)
         burstScale.current = 0
@@ -91,9 +81,9 @@ function Ring({ id, position, color, isNext }) {
 
   return (
     <group ref={groupRef} position={position}>
-      {/* Main ring torus */}
-      <mesh ref={torusRef} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.5, 0.045, 16, 100]} />
+      {/* Main ring torus — vertical, facing Z axis (like a portal) */}
+      <mesh ref={torusRef}>
+        <torusGeometry args={[RING_OPENING_RADIUS, 0.06, 16, 100]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
@@ -107,8 +97,8 @@ function Ring({ id, position, color, isNext }) {
       </mesh>
 
       {/* Decorative inner ring */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.2, 0.015, 8, 80]} />
+      <mesh>
+        <torusGeometry args={[RING_OPENING_RADIUS * 0.8, 0.02, 8, 80]} />
         <meshStandardMaterial
           color="#ffffff"
           emissive={color}
@@ -119,13 +109,13 @@ function Ring({ id, position, color, isNext }) {
         />
       </mesh>
 
-      {/* Inner glow disc */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.45, 64]} />
+      {/* Glow disc — semi-transparent portal surface */}
+      <mesh>
+        <circleGeometry args={[RING_OPENING_RADIUS * 0.95, 64]} />
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={isNext && !passed ? 0.04 : (passed ? 0.06 : 0.01)}
+          opacity={isNext && !passed ? 0.06 : (passed ? 0.08 : 0.02)}
           side={THREE.DoubleSide}
           toneMapped={false}
         />
@@ -133,7 +123,7 @@ function Ring({ id, position, color, isNext }) {
 
       {/* Glow sphere around ring */}
       <mesh ref={glowRef}>
-        <sphereGeometry args={[2.0, 16, 16]} />
+        <sphereGeometry args={[2.2, 16, 16]} />
         <meshBasicMaterial
           color={color}
           transparent
@@ -155,7 +145,6 @@ function Ring({ id, position, color, isNext }) {
         />
       </mesh>
 
-      {/* Point light */}
       <pointLight
         ref={lightRef}
         color={color}

@@ -65,7 +65,9 @@ export default function Trail() {
           float dist = length(gl_PointCoord - vec2(0.5));
           if (dist > 0.5) discard;
           float alpha = smoothstep(0.5, 0.05, dist) * vOpacity;
-          gl_FragColor = vec4(vColor, alpha);
+          // Cap brightness to prevent blowout when many particles overlap
+          vec3 color = vColor * min(alpha, 0.35);
+          gl_FragColor = vec4(color, min(alpha, 0.4));
         }
       `,
     })
@@ -97,7 +99,7 @@ export default function Trail() {
       trailColors[i3 + 2] = c.b
 
       sizes[idx] = POINT_SIZE
-      opacities[idx] = 0.9
+      opacities[idx] = 0.6  // lower start opacity prevents blowout
 
       currentIdx.current++
 
@@ -111,12 +113,12 @@ export default function Trail() {
     const total = Math.min(currentIdx.current, MAX_POINTS)
     for (let i = 0; i < total; i++) {
       if (opacities[i] > 0.01) {
-        if (opacities[i] > 0.2) {
+        if (opacities[i] > 0.15) {
           // Recent trail fades gently
           opacities[i] *= 0.9988
         } else {
           // Old trail settles to persistent dim glow
-          opacities[i] = Math.max(opacities[i] * 0.9999, 0.015)
+          opacities[i] = Math.max(opacities[i] * 0.9999, 0.01)
         }
       } else {
         opacities[i] = 0
