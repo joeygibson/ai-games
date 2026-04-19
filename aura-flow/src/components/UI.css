@@ -182,6 +182,25 @@
   box-shadow: 0 0 8px rgba(254, 202, 87, 0.4);
 }
 
+/* ========== DEBUG RING DOTS ========== */
+
+.debug-rings {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.debug-ring {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.debug-ring.passed {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* ========== COLOR / INDICATORS ========== */
 
 .next-ring-hint {

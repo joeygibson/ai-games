@@ -12,7 +12,7 @@ const VERTICAL_DAMPING = 0.93
 const MAX_SPEED = 0.7
 // How close to the ring center you need to be to trigger it
 // Ring visual radius is 2.2, so 2.0 means you need to go through the opening
-const RING_TRIGGER_DIST = 2.0
+const RING_TRIGGER_DIST = 4.0
 
 // Reusable vectors
 const _moveDir = new THREE.Vector3()

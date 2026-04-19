@@ -125,6 +125,19 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
         </div>
       </div>
 
+      {/* Next ring: show distance to ALL unpassed rings for debugging */}
+      <div className="debug-rings">
+        {RINGS.map((ring) => {
+          const isPassed = ringsPassed.includes(ring.id)
+          return (
+            <div key={ring.id} className={`debug-ring ${isPassed ? 'passed' : ''}`}>
+              <span style={{ color: isPassed ? ring.color : 'rgba(255,255,255,0.3)' }}>✓ </span>
+              {ring.id}
+            </div>
+          )
+        })}
+      </div>
+
       {/* Next ring distance */}
       {passedCount < total && (
         <div className="next-ring-hint">
