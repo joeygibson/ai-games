@@ -14,6 +14,8 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
   const total = RINGS.length
 
   const [nextRingDist, setNextRingDist] = useState(0)
+  const [nearestDist, setNearestDist] = useState(99)
+  const [nearestId, setNearestId] = useState(-1)
 
   // Update distance to next ring every frame
   useEffect(() => {
@@ -22,9 +24,21 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
     const update = () => {
       const unpassed = RINGS.filter(r => !ringsPassed.includes(r.id))
       if (unpassed.length > 0) {
+        // Show distance to first unpassed
         const ringPos = new THREE.Vector3(...unpassed[0].position)
         const dist = playerPosition.distanceTo(ringPos)
         setNextRingDist(Math.round(dist))
+        
+        // Find nearest unpassed ring of ALL
+        let minDist = Infinity
+        let minId = -1
+        for (const r of unpassed) {
+          const rp = new THREE.Vector3(...r.position)
+          const d = playerPosition.distanceTo(rp)
+          if (d < minDist) { minDist = d; minId = r.id }
+        }
+        setNearestDist(Math.round(minDist * 10) / 10)
+        setNearestId(minId)
       }
       raf = requestAnimationFrame(update)
     }
@@ -141,8 +155,8 @@ export default function UI({ phase, onStart, onRestart, showHint }) {
       {/* Next ring distance */}
       {passedCount < total && (
         <div className="next-ring-hint">
-          <span className="next-ring-label">NEXT RING</span>
-          <span className="next-ring-dist">{nextRingDist}m</span>
+          <span className="next-ring-label">RING {nearestId}</span>
+          <span className="next-ring-dist">{nearestDist}m</span>
         </div>
       )}
 
